@@ -22,7 +22,7 @@ print("=== BEAUTYFAN BOT STARTED ===", flush=True)
 FEEDS = {
     "feed 1": {"link": "", "note": "PROMO (bovenaan)"},
     "feed 2": {"link": "", "note": ""},
-    "feed 3": {"link": "https://bsky.app/profile/did:plc:jaka644beit3x4vmmg6yysw7/feed/aaae6jfc5w2oi", "redfox": ""},
+    "feed 3": {"link": "https://bsky.app/profile/did:plc:jaka644beit3x4vmmg6yysw7/feed/aaae6jfc5w2oi", "note": "redfox"},
     "feed 4": {"link": "", "note": ""},
     "feed 5": {"link": "", "note": ""},
     "feed 6": {"link": "", "note": ""},
@@ -32,6 +32,8 @@ FEEDS = {
     "feed 10": {"link": "", "note": ""},
 }
 
+PROMO_FEED_KEY = "feed 3"   # ✅ want dit is je echte feed
+PROMO_LIST_KEY = "lijst 1"  # ✅ blijft goed
 LIJSTEN = {
     "lijst 1": {"link": "https://bsky.app/profile/did:plc:cvfulblhg2fttolrunih4ldv/lists/3mfpgt3d5332n", "note": "PROMO (bovenaan)"},
     "lijst 2": {"link": "", "note": ""},
