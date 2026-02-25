@@ -681,18 +681,4 @@ if __name__ == "__main__":
         print("=== ABOUT TO CALL MAIN ===", flush=True)
         main()
     except Exception:
-        import traceback
-
-        print("=== FATAL ERROR ===", flush=True)
-        traceback.print_exc()
-        raise
-    # reserve space so promo always fits
-    reserve_for_promo = len(promo_cands)
-    normal_budget = max(0, MAX_PER_RUN - reserve_for_promo)
-
-    # 1) normal first
-    for c in normal_cands:
-        if total_done >= normal_budget:
-            break
-
-       
+        
