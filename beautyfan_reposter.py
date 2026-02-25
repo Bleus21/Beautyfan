@@ -681,4 +681,7 @@ if __name__ == "__main__":
         print("=== ABOUT TO CALL MAIN ===", flush=True)
         main()
     except Exception:
-        
+        import traceback
+        print("=== FATAL ERROR ===", flush=True)
+        traceback.print_exc()
+        raise
