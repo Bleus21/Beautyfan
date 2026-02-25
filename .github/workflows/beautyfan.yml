@@ -3,7 +3,7 @@ name: beautyfan-bot
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 * * * *" # elk uur
+    - cron: "23 * * * *" # elk uur
 
 permissions:
   contents: write
