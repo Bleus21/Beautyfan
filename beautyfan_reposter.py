@@ -33,7 +33,7 @@ FEEDS = {
 }
 
 LIJSTEN = {
-    "lijst 1": {"link": "", "note": "PROMO (bovenaan)"},
+    "lijst 1": {"link": "https://bsky.app/profile/did:plc:cvfulblhg2fttolrunih4ldv/lists/3mfpgt3d5332n", "note": "PROMO (bovenaan)"},
     "lijst 2": {"link": "", "note": ""},
     "lijst 3": {"link": "", "note": ""},
     "lijst 4": {"link": "", "note": ""},
