@@ -21,7 +21,7 @@ print("=== BEAUTYFAN BOT STARTED ===", flush=True)
 
 FEEDS = {
     "feed 1": {"link": "", "note": "PROMO (bovenaan)"},
-    "feed 2": {"link": "", "note": ""},
+    "feed 2": {"link": "https://bsky.app/profile/did:plc:jaka644beit3x4vmmg6yysw7/feed/aaablag6rrqxu", "note": "beautygrouplijst"},
     "feed 3": {
         "link": "https://bsky.app/profile/did:plc:jaka644beit3x4vmmg6yysw7/feed/aaae6jfc5w2oi",
         "note": "redfox",
