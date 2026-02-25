@@ -16,13 +16,16 @@ except Exception:
 print("=== BEAUTYFAN BOT STARTED ===", flush=True)
 
 # ============================================================
-# CONFIG — leeg = skip (structuur blijft bestaan)
+# CONFIG — leeg = skip
 # ============================================================
 
 FEEDS = {
     "feed 1": {"link": "", "note": "PROMO (bovenaan)"},
     "feed 2": {"link": "", "note": ""},
-    "feed 3": {"link": "https://bsky.app/profile/did:plc:jaka644beit3x4vmmg6yysw7/feed/aaae6jfc5w2oi", "note": "redfox"},
+    "feed 3": {
+        "link": "https://bsky.app/profile/did:plc:jaka644beit3x4vmmg6yysw7/feed/aaae6jfc5w2oi",
+        "note": "redfox",
+    },
     "feed 4": {"link": "", "note": ""},
     "feed 5": {"link": "", "note": ""},
     "feed 6": {"link": "", "note": ""},
@@ -32,10 +35,11 @@ FEEDS = {
     "feed 10": {"link": "", "note": ""},
 }
 
-PROMO_FEED_KEY = "feed 3"   # ✅ want dit is je echte feed
-PROMO_LIST_KEY = "lijst 1"  # ✅ blijft goed
 LIJSTEN = {
-    "lijst 1": {"link": "https://bsky.app/profile/did:plc:cvfulblhg2fttolrunih4ldv/lists/3mfpgt3d5332n", "note": "PROMO (bovenaan)"},
+    "lijst 1": {
+        "link": "https://bsky.app/profile/did:plc:cvfulblhg2fttolrunih4ldv/lists/3mfpgt3d5332n",
+        "note": "PROMO (bovenaan)",
+    },
     "lijst 2": {"link": "", "note": ""},
     "lijst 3": {"link": "", "note": ""},
     "lijst 4": {"link": "", "note": ""},
@@ -47,7 +51,7 @@ LIJSTEN = {
     "lijst 10": {"link": "", "note": ""},
 }
 
-# ✅ Alleen exclude + hashtag actief
+# Uitsluiten: iedereen uit deze lijst(en) nooit repost/like
 EXCLUDE_LISTS = {
     "exclude 1": {
         "link": "https://bsky.app/profile/did:plc:5si6ivvplllayxrf6h5euwsd/lists/3mfkghzcmt72w",
@@ -57,6 +61,7 @@ EXCLUDE_LISTS = {
 
 HASHTAG_QUERY = "#bskypromo"
 
+# ✅ Promo keys (jij wil: feed 1 is promo, list 1 is promo)
 PROMO_FEED_KEY = "feed 1"
 PROMO_LIST_KEY = "lijst 1"
 
@@ -71,7 +76,7 @@ SLEEP_SECONDS = float(os.getenv("SLEEP_SECONDS", "2"))
 STATE_FILE = os.getenv("STATE_FILE", "state_beautyfan.json")
 
 LIST_MEMBER_LIMIT = int(os.getenv("LIST_MEMBER_LIMIT", "1500"))
-AUTHOR_POSTS_PER_MEMBER = int(os.getenv("AUTHOR_POSTS_PER_MEMBER", "30"))
+AUTHOR_POSTS_PER_MEMBER = int(os.getenv("AUTHOR_POSTS_PER_MEMBER", "30"))  # aanrader
 FEED_MAX_ITEMS = int(os.getenv("FEED_MAX_ITEMS", "500"))
 HASHTAG_MAX_ITEMS = int(os.getenv("HASHTAG_MAX_ITEMS", "100"))
 
@@ -195,8 +200,17 @@ def normalize_list_uri(client: Client, s: str) -> Optional[str]:
 def load_state(path: str) -> Dict:
     if not os.path.exists(path):
         return {"repost_records": {}, "like_records": {}}
-    with open(path, "r", encoding="utf-8") as f:
-        return json.load(f)
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        if not isinstance(data, dict):
+            return {"repost_records": {}, "like_records": {}}
+        data.setdefault("repost_records", {})
+        data.setdefault("like_records", {})
+        return data
+    except Exception:
+        # corrupt/empty state -> reset
+        return {"repost_records": {}, "like_records": {}}
 
 
 def save_state(path: str, state: Dict) -> None:
@@ -209,10 +223,26 @@ def save_state(path: str, state: Dict) -> None:
 def parse_at_uri_rkey(uri: str) -> Optional[Tuple[str, str, str]]:
     if not uri or not uri.startswith("at://"):
         return None
-    parts = uri[len("at://"):].split("/")
+    parts = uri[len("at://") :].split("/")
     if len(parts) < 3:
         return None
     return parts[0], parts[1], parts[2]
+
+
+def fetch_feed_items(client: Client, feed_uri: str, max_items: int) -> List:
+    items: List = []
+    cursor = None
+    while True:
+        params = {"feed": feed_uri, "limit": 100}
+        if cursor:
+            params["cursor"] = cursor
+        out = client.app.bsky.feed.get_feed(params)
+        batch = getattr(out, "feed", []) or []
+        items.extend(batch)
+        cursor = getattr(out, "cursor", None)
+        if not cursor or len(items) >= max_items:
+            break
+    return items[:max_items]
 
 
 def fetch_list_members(client: Client, list_uri: str, limit: int) -> List[Tuple[str, str]]:
@@ -240,6 +270,14 @@ def fetch_list_members(client: Client, list_uri: str, limit: int) -> List[Tuple[
     return members[:limit]
 
 
+def fetch_author_feed(client: Client, actor: str, limit: int) -> List:
+    try:
+        out = client.app.bsky.feed.get_author_feed({"actor": actor, "limit": limit})
+        return getattr(out, "feed", []) or []
+    except Exception:
+        return []
+
+
 def fetch_hashtag_posts(client: Client, max_items: int) -> List:
     try:
         out = client.app.bsky.feed.search_posts({"q": HASHTAG_QUERY, "sort": "latest", "limit": max_items})
@@ -248,12 +286,82 @@ def fetch_hashtag_posts(client: Client, max_items: int) -> List:
         return []
 
 
+def build_candidates_from_feed_items(
+    items: List,
+    cutoff: datetime,
+    exclude_handles: Set[str],
+    exclude_dids: Set[str],
+    force_refresh: bool,
+) -> List[Dict]:
+    """
+    force_refresh=True (PROMO): cutoff wordt genegeerd.
+    """
+    cands: List[Dict] = []
+    for item in items:
+        post = getattr(item, "post", None)
+        if not post:
+            continue
+
+        # skip boosts/reposts
+        if hasattr(item, "reason") and item.reason is not None:
+            continue
+
+        record = getattr(post, "record", None)
+        if not record:
+            continue
+
+        if getattr(record, "reply", None):
+            continue
+
+        if is_quote_post(record):
+            continue
+
+        if not has_media(record):
+            continue
+
+        uri = getattr(post, "uri", None)
+        cid = getattr(post, "cid", None)
+        if not uri or not cid:
+            continue
+
+        author = getattr(post, "author", None)
+        ah = (getattr(author, "handle", "") or "").lower()
+        ad = (getattr(author, "did", "") or "").lower()
+
+        if ah in exclude_handles or ad in exclude_dids:
+            continue
+
+        created = parse_time(post)
+        if not created:
+            continue
+
+        # only non-promo constrained by cutoff
+        if created < cutoff and not force_refresh:
+            continue
+
+        cands.append(
+            {
+                "uri": uri,
+                "cid": cid,
+                "created": created,
+                "author_key": ad or ah or uri,
+                "force_refresh": force_refresh,
+            }
+        )
+
+    cands.sort(key=lambda x: x["created"])
+    return cands
+
+
 def build_candidates_from_postviews(
     posts: List,
     cutoff: datetime,
     exclude_handles: Set[str],
     exclude_dids: Set[str],
 ) -> List[Dict]:
+    """
+    Hashtag blijft binnen cutoff.
+    """
     cands: List[Dict] = []
     for post in posts:
         record = getattr(post, "record", None)
@@ -285,16 +393,52 @@ def build_candidates_from_postviews(
         if not created or created < cutoff:
             continue
 
-        cands.append({
-            "uri": uri,
-            "cid": cid,
-            "created": created,
-            "author_key": ad or ah or uri,
-            "force_refresh": False,
-        })
+        cands.append(
+            {
+                "uri": uri,
+                "cid": cid,
+                "created": created,
+                "author_key": ad or ah or uri,
+                "force_refresh": False,
+            }
+        )
 
     cands.sort(key=lambda x: x["created"])
     return cands
+
+
+def force_unrepost_unlike_if_needed(
+    client: Client,
+    me: str,
+    subject_uri: str,
+    repost_records: Dict[str, str],
+    like_records: Dict[str, str],
+):
+    # unrepost
+    if subject_uri in repost_records:
+        existing_repost_uri = repost_records.get(subject_uri)
+        parsed = parse_at_uri_rkey(existing_repost_uri) if existing_repost_uri else None
+        if parsed:
+            did, collection, rkey = parsed
+            if did == me and collection == "app.bsky.feed.repost":
+                try:
+                    client.app.bsky.feed.repost.delete({"repo": me, "rkey": rkey})
+                except Exception as e:
+                    log(f"⚠️ PROMO unrepost failed: {e}")
+        repost_records.pop(subject_uri, None)
+
+    # unlike
+    if subject_uri in like_records:
+        existing_like_uri = like_records.get(subject_uri)
+        parsed = parse_at_uri_rkey(existing_like_uri) if existing_like_uri else None
+        if parsed:
+            did, collection, rkey = parsed
+            if did == me and collection == "app.bsky.feed.like":
+                try:
+                    client.app.bsky.feed.like.delete({"repo": me, "rkey": rkey})
+                except Exception as e:
+                    log(f"⚠️ PROMO unlike failed: {e}")
+        like_records.pop(subject_uri, None)
 
 
 def repost_and_like(
@@ -304,10 +448,15 @@ def repost_and_like(
     subject_cid: str,
     repost_records: Dict[str, str],
     like_records: Dict[str, str],
+    force_refresh: bool,
 ) -> bool:
-    if subject_uri in repost_records:
-        return False
+    if force_refresh:
+        force_unrepost_unlike_if_needed(client, me, subject_uri, repost_records, like_records)
+    else:
+        if subject_uri in repost_records:
+            return False
 
+    # repost
     try:
         out = client.app.bsky.feed.repost.create(
             repo=me,
@@ -323,6 +472,7 @@ def repost_and_like(
         log(f"⚠️ Repost error: {e}")
         return False
 
+    # like
     try:
         out_like = client.app.bsky.feed.like.create(
             repo=me,
@@ -360,10 +510,33 @@ def main():
     me = client.me.did
     log(f"✅ Logged in as {me}")
 
-    # normalize + load exclude members
-    exclude_handles: Set[str] = set()
-    exclude_dids: Set[str] = set()
+    # normalize feeds
+    feed_uris: List[Tuple[str, str, str]] = []
+    for key, obj in FEEDS.items():
+        link = (obj.get("link") or "").strip()
+        note = (obj.get("note") or "").strip()
+        if not link:
+            continue
+        uri = normalize_feed_uri(client, link)
+        if uri:
+            feed_uris.append((key, note, uri))
+        else:
+            log(f"⚠️ Feed ongeldig (skip): {key} -> {link}")
 
+    # normalize lists
+    list_uris: List[Tuple[str, str, str]] = []
+    for key, obj in LIJSTEN.items():
+        link = (obj.get("link") or "").strip()
+        note = (obj.get("note") or "").strip()
+        if not link:
+            continue
+        uri = normalize_list_uri(client, link)
+        if uri:
+            list_uris.append((key, note, uri))
+        else:
+            log(f"⚠️ Lijst ongeldig (skip): {key} -> {link}")
+
+    # normalize exclude
     excl_uris: List[Tuple[str, str, str]] = []
     for key, obj in EXCLUDE_LISTS.items():
         link = (obj.get("link") or "").strip()
@@ -376,6 +549,9 @@ def main():
         else:
             log(f"⚠️ Exclude lijst ongeldig (skip): {key} -> {link}")
 
+    # build exclude sets
+    exclude_handles: Set[str] = set()
+    exclude_dids: Set[str] = set()
     for key, note, luri in excl_uris:
         log(f"🚫 Loading exclude list: {key} ({note})")
         members = fetch_list_members(client, luri, limit=max(1000, LIST_MEMBER_LIMIT))
@@ -386,35 +562,112 @@ def main():
             if d:
                 exclude_dids.add(d.lower())
 
-    # feeds/lijsten zijn leeg -> skip
-    log("Feeds to process: 0 (all empty)")
-    log("Lists to process: 0 (all empty)")
+    # promo sort (fetch order only)
+    def promo_sort(item: Tuple[str, str, str], promo_key: str) -> int:
+        return 0 if item[0] == promo_key else 1
+
+    feed_uris.sort(key=lambda x: promo_sort(x, PROMO_FEED_KEY))
+    list_uris.sort(key=lambda x: promo_sort(x, PROMO_LIST_KEY))
+
+    all_candidates: List[Dict] = []
+
+    # feeds
+    log(f"Feeds to process: {len(feed_uris)}")
+    for key, note, furi in feed_uris:
+        is_promo = (key == PROMO_FEED_KEY)
+        log(f"📥 Feed: {key} ({note})" + (" [PROMO]" if is_promo else ""))
+        items = fetch_feed_items(client, furi, max_items=FEED_MAX_ITEMS)
+        all_candidates.extend(
+            build_candidates_from_feed_items(items, cutoff, exclude_handles, exclude_dids, force_refresh=is_promo)
+        )
+
+    # lists
+    log(f"Lists to process: {len(list_uris)}")
+    for key, note, luri in list_uris:
+        is_promo = (key == PROMO_LIST_KEY)
+        log(f"📋 List: {key} ({note})" + (" [PROMO]" if is_promo else ""))
+        members = fetch_list_members(client, luri, limit=max(1000, LIST_MEMBER_LIMIT))
+        log(f"👥 Members fetched: {len(members)}")
+
+        for (h, d) in members:
+            actor = d or h
+            if not actor:
+                continue
+
+            author_items = fetch_author_feed(client, actor, AUTHOR_POSTS_PER_MEMBER)
+            cands = build_candidates_from_feed_items(
+                author_items, cutoff, exclude_handles, exclude_dids, force_refresh=is_promo
+            )
+
+            if is_promo:
+                # ✅ PROMO: per member alleen de nieuwste mediapost (cutoff genegeerd door builder)
+                if cands:
+                    all_candidates.append(cands[-1])
+            else:
+                all_candidates.extend(cands)
 
     # hashtag
     log(f"🔎 Hashtag search: {HASHTAG_QUERY}")
-    posts = fetch_hashtag_posts(client, HASHTAG_MAX_ITEMS)
-    log(f"Hashtag posts fetched: {len(posts)}")
+    hashtag_posts = fetch_hashtag_posts(client, HASHTAG_MAX_ITEMS)
+    log(f"Hashtag posts fetched: {len(hashtag_posts)}")
+    all_candidates.extend(build_candidates_from_postviews(hashtag_posts, cutoff, exclude_handles, exclude_dids))
 
-    candidates = build_candidates_from_postviews(posts, cutoff, exclude_handles, exclude_dids)
-    log(f"🧩 Candidates total: {len(candidates)}")
+    # ============================================================
+    # DEDUPE + PROCESS: PROMO ALS LAATSTE (zodat bovenaan blijft)
+    # ============================================================
+    seen: Set[str] = set()
+    deduped: List[Dict] = []
+    for c in all_candidates:
+        uri = c.get("uri")
+        if not uri:
+            continue
+        if uri in seen:
+            continue
+        seen.add(uri)
+        deduped.append(c)
+
+    promo_cands = [c for c in deduped if c.get("force_refresh")]
+    normal_cands = [c for c in deduped if not c.get("force_refresh")]
+
+    normal_cands.sort(key=lambda x: x["created"])
+    promo_cands.sort(key=lambda x: x["created"])
+
+    log(f"🧩 Candidates total (deduped): {len(deduped)} | normal: {len(normal_cands)} | promo: {len(promo_cands)}")
 
     total_done = 0
     per_user_count: Dict[str, int] = {}
 
-    for c in candidates:
-        if total_done >= MAX_PER_RUN:
+    # reserve space so promo always fits
+    reserve_for_promo = len(promo_cands)
+    normal_budget = max(0, MAX_PER_RUN - reserve_for_promo)
+
+    # 1) normal first
+    for c in normal_cands:
+        if total_done >= normal_budget:
             break
 
         ak = c["author_key"]
         per_user_count.setdefault(ak, 0)
+
         if per_user_count[ak] >= MAX_PER_USER:
             continue
 
-        ok = repost_and_like(client, me, c["uri"], c["cid"], repost_records, like_records)
+        ok = repost_and_like(client, me, c["uri"], c["cid"], repost_records, like_records, force_refresh=False)
         if ok:
             total_done += 1
             per_user_count[ak] += 1
             log(f"✅ Repost+Like: {c['uri']}")
+            time.sleep(SLEEP_SECONDS)
+
+    # 2) PROMO LAST (feed + list)
+    for c in promo_cands:
+        if total_done >= MAX_PER_RUN:
+            break
+
+        ok = repost_and_like(client, me, c["uri"], c["cid"], repost_records, like_records, force_refresh=True)
+        if ok:
+            total_done += 1
+            log(f"✅ PROMO refresh repost+like: {c['uri']}")
             time.sleep(SLEEP_SECONDS)
 
     state["repost_records"] = repost_records
@@ -429,6 +682,17 @@ if __name__ == "__main__":
         main()
     except Exception:
         import traceback
+
         print("=== FATAL ERROR ===", flush=True)
         traceback.print_exc()
         raise
+    # reserve space so promo always fits
+    reserve_for_promo = len(promo_cands)
+    normal_budget = max(0, MAX_PER_RUN - reserve_for_promo)
+
+    # 1) normal first
+    for c in normal_cands:
+        if total_done >= normal_budget:
+            break
+
+       
