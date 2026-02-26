@@ -54,7 +54,7 @@ LIJSTEN = {
 # Uitsluiten: iedereen uit deze lijst(en) nooit repost/like
 EXCLUDE_LISTS = {
     "exclude 1": {
-        "link": "https://bsky.app/profile/did:plc:5si6ivvplllayxrf6h5euwsd/lists/3mfkghzcmt72w",
+        "link": "https://bsky.app/profile/did:plc:cvfulblhg2fttolrunih4ldv/lists/3mfr6dhkalx2h",
         "note": "Bskypromopause",
     }
 }
