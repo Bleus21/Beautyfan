@@ -26,7 +26,7 @@ FEEDS = {
         "link": "https://bsky.app/profile/did:plc:jaka644beit3x4vmmg6yysw7/feed/aaae6jfc5w2oi",
         "note": "redfox",
     },
-    "feed 4": {"link": "", "note": ""},
+    "feed 4": {"link": "https://bsky.app/profile/did:plc:jaka644beit3x4vmmg6yysw7/feed/aaamemhhmayqe", "vendrediseins": ""},
     "feed 5": {"link": "", "note": ""},
     "feed 6": {"link": "", "note": ""},
     "feed 7": {"link": "", "note": ""},
