@@ -21,7 +21,7 @@ print("=== BEAUTYFAN BOT STARTED ===", flush=True)
 
 FEEDS = {
     "feed 1": {"link": "", "note": "PROMO (bovenaan)"},
-    "feed 2": {"link": "https://bsky.app/profile/did:plc:jaka644beit3x4vmmg6yysw7/feed/aaablag6rrqxu", "note": "beautygrouplijst"},
+    "feed 2": {"link": "", "note": ""},
     "feed 3": {
         "link": "https://bsky.app/profile/did:plc:jaka644beit3x4vmmg6yysw7/feed/aaae6jfc5w2oi",
         "note": "redfox",
@@ -40,7 +40,7 @@ LIJSTEN = {
         "link": "https://bsky.app/profile/did:plc:cvfulblhg2fttolrunih4ldv/lists/3mfpgt3d5332n",
         "note": "PROMO (bovenaan)",
     },
-    "lijst 2": {"link": "", "note": ""},
+    "lijst 2": {"link": "https://bsky.app/profile/did:plc:jaka644beit3x4vmmg6yysw7/lists/3m3iga6wnmz2p", "note": "Beautygroup list 1"},
     "lijst 3": {"link": "", "note": ""},
     "lijst 4": {"link": "", "note": ""},
     "lijst 5": {"link": "", "note": ""},
