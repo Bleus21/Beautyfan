@@ -8,11 +8,12 @@ import random
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, List, Set, Tuple
 
-# Github Actions: print direct
 try:
     sys.stdout.reconfigure(line_buffering=True)
 except Exception:
     pass
+
+print("=== BEAUTYFAN BOT STARTED ===", flush=True)
 
 # ============================================================
 # BOT INFO
@@ -29,133 +30,190 @@ except Exception:
 #   BSKY_USERNAME_BEAUTYFAN
 #   BSKY_PASSWORD_BEAUTYFAN
 #
-# In de workflows worden die gemapt naar:
+# In workflows mappen naar:
 #   BSKY_USERNAME
 #   BSKY_PASSWORD
 # ============================================================
 
-print("=== BEAUTYFAN BOT STARTED ===", flush=True)
-
 # ============================================================
-# FEEDS (max 20)
+# FEEDS (20 stuks)
 # leeg = skip
-# enabled 0 = uit
+# enabled: 1 = aan, 0 = uit
+# allow_posts / allow_replies / allow_reposts: 1 of 0
+# priority: alleen tie-break / selectiehulp, timeline blijft leidend
 # ============================================================
 
-FEEDS = {
-    "feed 1": {
-        "link": "",
-        "note": "PROMO FEED",
-        "enabled": 0,
-        "allow_posts": 1,
-        "allow_replies": 0,
-        "allow_reposts": 0,
-    },
-
-    "feed 2": {
-        "link": "https://bsky.app/profile/did:plc:jaka644beit3x4vmmg6yysw7/feed/aaae6jfc5w2oi",
-        "note": "Redfoxofficial",
-        "enabled": 1,
-        "allow_posts": 1,
-        "allow_replies": 1,
-        "allow_reposts": 0,
-    },
-
-    "feed 3": {
-        "link": "https://bsky.app/profile/did:plc:jaka644beit3x4vmmg6yysw7/feed/aaabjeu5724em",
-        "note": "Mentioned",
-        "enabled": 1,
-        "allow_posts": 1,
-        "allow_replies": 0,
-        "allow_reposts": 1,
-    },
-
-    **{f"feed {i}": {
+FEEDS: Dict[str, Dict] = {
+    f"feed {i}": {
         "link": "",
         "note": "",
         "enabled": 0,
         "allow_posts": 1,
         "allow_replies": 0,
         "allow_reposts": 0,
-    } for i in range(4, 21)}
+        "priority": 0,
+    }
+    for i in range(1, 21)
 }
 
+FEEDS["feed 1"].update({
+    "link": "",
+    "note": "PROMO FEED",
+    "enabled": 0,
+    "allow_posts": 1,
+    "allow_replies": 0,
+    "allow_reposts": 0,
+    "priority": 10,
+})
+
+FEEDS["feed 2"].update({
+    "link": "https://bsky.app/profile/did:plc:jaka644beit3x4vmmg6yysw7/feed/aaae6jfc5w2oi",
+    "note": "Redfoxofficial",
+    "enabled": 1,
+    "allow_posts": 1,
+    "allow_replies": 1,
+    "allow_reposts": 0,
+    "priority": 5,
+})
+
+FEEDS["feed 3"].update({
+    "link": "https://bsky.app/profile/did:plc:jaka644beit3x4vmmg6yysw7/feed/aaabjeu5724em",
+    "note": "Mentioned",
+    "enabled": 1,
+    "allow_posts": 1,
+    "allow_replies": 0,
+    "allow_reposts": 1,
+    "priority": 5,
+})
+
 # ============================================================
-# LIJSTEN (max 20)
+# LIJSTEN (20 stuks)
+# leeg = skip
+# enabled: 1 = aan, 0 = uit
+# allow_posts / allow_replies / allow_reposts: 1 of 0
 # ============================================================
 
-LIJSTEN = {
-    "lijst 1": {
-        "link": "https://bsky.app/profile/did:plc:jaka644beit3x4vmmg6yysw7/lists/3m3iga6wnmz2p",
-        "note": "Beautygrouplijst",
-        "enabled": 1,
-    },
-
-    "lijst 2": {
-        "link": "https://bsky.app/profile/did:plc:jaka644beit3x4vmmg6yysw7/lists/3mgldgnponw2m",
-        "note": "Beautygroup creators",
-        "enabled": 1,
-    },
-
-    "lijst 3": {
-        "link": "https://bsky.app/profile/did:plc:zmyydkc2zzznc4smjufuerlx/lists/3mhs2vtwixg2q",
-        "note": "Photo lijst 1",
-        "enabled": 1,
-    },
-
-    "lijst 4": {
-        "link": "https://bsky.app/profile/did:plc:zmyydkc2zzznc4smjufuerlx/lists/3mhs2xmxmos2l",
-        "note": "Photo lijst 2",
-        "enabled": 1,
-    },
-
-    "lijst 5": {
-        "link": "https://bsky.app/profile/did:plc:cvfulblhg2fttolrunih4ldv/lists/3mieeazmxw422",
-        "note": "PROMO RANDOM",
-        "enabled": 1,
-    },
-
-    "lijst 6": {
-        "link": "https://bsky.app/profile/did:plc:cvfulblhg2fttolrunih4ldv/lists/3mfpgt3d5332n",
-        "note": "PROMO LATEST",
-        "enabled": 1,
-    },
-
-    "lijst 7": {
-        "link": "https://bsky.app/profile/did:plc:cvfulblhg2fttolrunih4ldv/lists/3mieg6y74fw2h",
-        "note": "24H PROMO LATEST",
-        "enabled": 1,
-    },
-
-    "lijst 8": {
-        "link": "https://bsky.app/profile/did:plc:cvfulblhg2fttolrunih4ldv/lists/3mieg6jlokx2m",
-        "note": "24H PROMO RANDOM",
-        "enabled": 1,
-    },
-
-    **{f"lijst {i}": {
+LIJSTEN: Dict[str, Dict] = {
+    f"lijst {i}": {
         "link": "",
         "note": "",
         "enabled": 0,
-    } for i in range(9, 21)}
+        "allow_posts": 1,
+        "allow_replies": 0,
+        "allow_reposts": 0,
+        "priority": 0,
+    }
+    for i in range(1, 21)
 }
+
+LIJSTEN["lijst 1"].update({
+    "link": "https://bsky.app/profile/did:plc:jaka644beit3x4vmmg6yysw7/lists/3m3iga6wnmz2p",
+    "note": "Beautygrouplijst",
+    "enabled": 1,
+    "allow_posts": 1,
+    "allow_replies": 0,
+    "allow_reposts": 0,
+    "priority": 3,
+})
+
+LIJSTEN["lijst 2"].update({
+    "link": "https://bsky.app/profile/did:plc:jaka644beit3x4vmmg6yysw7/lists/3mgldgnponw2m",
+    "note": "Beautygroup creators",
+    "enabled": 1,
+    "allow_posts": 1,
+    "allow_replies": 0,
+    "allow_reposts": 0,
+    "priority": 3,
+})
+
+LIJSTEN["lijst 3"].update({
+    "link": "https://bsky.app/profile/did:plc:zmyydkc2zzznc4smjufuerlx/lists/3mhs2vtwixg2q",
+    "note": "Photo lijst 1",
+    "enabled": 1,
+    "allow_posts": 1,
+    "allow_replies": 0,
+    "allow_reposts": 0,
+    "priority": 2,
+})
+
+LIJSTEN["lijst 4"].update({
+    "link": "https://bsky.app/profile/did:plc:zmyydkc2zzznc4smjufuerlx/lists/3mhs2xmxmos2l",
+    "note": "Photo lijst 2",
+    "enabled": 1,
+    "allow_posts": 1,
+    "allow_replies": 0,
+    "allow_reposts": 0,
+    "priority": 2,
+})
+
+LIJSTEN["lijst 5"].update({
+    "link": "https://bsky.app/profile/did:plc:cvfulblhg2fttolrunih4ldv/lists/3mieeazmxw422",
+    "note": "PROMO RANDOM",
+    "enabled": 1,
+    "allow_posts": 1,
+    "allow_replies": 0,
+    "allow_reposts": 0,
+    "priority": 10,
+})
+
+LIJSTEN["lijst 6"].update({
+    "link": "https://bsky.app/profile/did:plc:cvfulblhg2fttolrunih4ldv/lists/3mfpgt3d5332n",
+    "note": "PROMO LATEST",
+    "enabled": 1,
+    "allow_posts": 1,
+    "allow_replies": 0,
+    "allow_reposts": 0,
+    "priority": 10,
+})
+
+LIJSTEN["lijst 7"].update({
+    "link": "https://bsky.app/profile/did:plc:cvfulblhg2fttolrunih4ldv/lists/3mieg6y74fw2h",
+    "note": "24H PROMO LATEST",
+    "enabled": 1,
+    "allow_posts": 1,
+    "allow_replies": 0,
+    "allow_reposts": 0,
+    "priority": 20,
+})
+
+LIJSTEN["lijst 8"].update({
+    "link": "https://bsky.app/profile/did:plc:cvfulblhg2fttolrunih4ldv/lists/3mieg6jlokx2m",
+    "note": "24H PROMO RANDOM",
+    "enabled": 1,
+    "allow_posts": 1,
+    "allow_replies": 0,
+    "allow_reposts": 0,
+    "priority": 20,
+})
 
 # ============================================================
 # HASHTAGS
+# leeg = skip
 # ============================================================
 
 HASHTAGS = [
     "#bskypromo",
+    "",
+    "",
 ]
 
 # ============================================================
 # EXCLUDE LISTS
+# leeg = skip
 # ============================================================
 
 EXCLUDE_LISTS = {
     "exclude 1": {
         "link": "https://bsky.app/profile/did:plc:cvfulblhg2fttolrunih4ldv/lists/3mfr6dhkalx2h",
         "note": "blacklist",
+    },
+    "exclude 2": {
+        "link": "",
+        "note": "",
+    },
+    "exclude 3": {
+        "link": "",
+        "note": "",
     },
 }
 
@@ -166,12 +224,13 @@ EXCLUDE_LISTS = {
 PROMO_FEED_KEY = "feed 1"
 PROMO_RANDOM_LIST_KEY = "lijst 5"
 PROMO_LATEST_LIST_KEY = "lijst 6"
-PROMO_24H_RANDOM_KEY = "lijst 8"
 PROMO_24H_LATEST_KEY = "lijst 7"
+PROMO_24H_RANDOM_KEY = "lijst 8"
 
 # ============================================================
-# PROCESS ORDER (0 = uit)
-# hoogste = laatste = bovenaan profiel
+# PROCESS ORDER
+# 0 = uit
+# hoogste nummer = als laatste = bovenaan profiel
 # ============================================================
 
 PROCESS_ORDER = {
@@ -201,10 +260,7 @@ HASHTAG_MAX_ITEMS = int(os.getenv("HASHTAG_MAX_ITEMS", "100"))
 PROMO_RANDOM_POOL = int(os.getenv("PROMO_RANDOM_POOL", "25"))
 PROMO_FETCH_PER_MEMBER = int(os.getenv("PROMO_FETCH_PER_MEMBER", "100"))
 
-# voorkomt snelle herhaling van dezelfde post
 POST_COOLDOWN_HOURS = int(os.getenv("POST_COOLDOWN_HOURS", "3"))
-
-# 24u promo
 PROMO_24H_DURATION_HOURS = int(os.getenv("PROMO_24H_DURATION_HOURS", "24"))
 
 ENV_USERNAME = "BSKY_USERNAME"
@@ -235,8 +291,6 @@ def parse_iso_dt(value: Optional[str]) -> Optional[datetime]:
         return datetime.fromisoformat(value.replace("Z", "+00:00"))
     except Exception:
         return None
-
-
 def parse_time(post) -> Optional[datetime]:
     indexed = getattr(post, "indexedAt", None) or getattr(post, "indexed_at", None)
     if indexed:
@@ -271,7 +325,6 @@ def has_real_media(record) -> bool:
     if getattr(embed, "video", None):
         return True
 
-    # external-only telt niet mee
     if getattr(embed, "external", None):
         return False
 
@@ -381,8 +434,6 @@ def fetch_feed_items(client: Client, feed_uri: str, max_items: int) -> List:
         if not cursor or len(items) >= max_items:
             break
     return items[:max_items]
-
-
 def fetch_list_members(client: Client, list_uri: str, limit: int) -> List[Tuple[str, str]]:
     members: List[Tuple[str, str]] = []
     cursor = None
@@ -443,14 +494,10 @@ def post_matches_source_rules(record, is_repost_item: bool, allow_posts: int, al
     is_reply = bool(getattr(record, "reply", None))
 
     if is_repost_item:
-        if allow_reposts != 1:
-            return False
-        return True
+        return allow_reposts == 1
 
     if is_reply:
-        if allow_replies != 1:
-            return False
-        return True
+        return allow_replies == 1
 
     return allow_posts == 1
 
@@ -472,6 +519,7 @@ def build_candidates_from_feed_items(
     allow_reposts: int,
     force_refresh: bool = False,
     promo_bucket: Optional[str] = None,
+    source_priority: int = 0,
 ) -> List[Dict]:
     cands: List[Dict] = []
 
@@ -514,13 +562,12 @@ def build_candidates_from_feed_items(
                 "author_key": ad or ah or uri,
                 "force_refresh": force_refresh,
                 "promo_bucket": promo_bucket,
+                "source_priority": source_priority,
             }
         )
 
-    cands.sort(key=lambda x: x["created"])
+    cands.sort(key=lambda x: (x["created"], -x["source_priority"]))
     return cands
-
-
 def build_candidates_from_postviews(
     posts: List,
     cutoff: datetime,
@@ -564,10 +611,11 @@ def build_candidates_from_postviews(
                 "author_key": ad or ah or uri,
                 "force_refresh": False,
                 "promo_bucket": None,
+                "source_priority": 0,
             }
         )
 
-    cands.sort(key=lambda x: x["created"])
+    cands.sort(key=lambda x: (x["created"], -x["source_priority"]))
     return cands
 
 
@@ -576,6 +624,7 @@ def pick_random_weighted_candidate(
     exclude_handles: Set[str],
     exclude_dids: Set[str],
     pool_size: int,
+    source_priority: int,
 ) -> Optional[Dict]:
     media_cands: List[Dict] = []
 
@@ -583,14 +632,12 @@ def pick_random_weighted_candidate(
         post = getattr(item, "post", None)
         if not post:
             continue
-
         if item_is_repost(item):
             continue
 
         record = getattr(post, "record", None)
         if not record:
             continue
-
         if getattr(record, "reply", None):
             continue
         if is_quote_post(record):
@@ -619,6 +666,7 @@ def pick_random_weighted_candidate(
                 "cid": cid,
                 "created": created,
                 "author_key": ad or ah or uri,
+                "source_priority": source_priority,
             }
         )
 
@@ -627,8 +675,6 @@ def pick_random_weighted_candidate(
 
     media_cands.sort(key=lambda x: x["created"], reverse=True)
     pool = media_cands[:pool_size]
-
-    # nieuwere posts zwaarder meewegen
     weights = list(range(len(pool), 0, -1))
     chosen = random.choices(pool, weights=weights, k=1)[0]
 
@@ -644,6 +690,7 @@ def pick_latest_candidate(
     exclude_handles: Set[str],
     exclude_dids: Set[str],
     promo_bucket: str,
+    source_priority: int,
 ) -> Optional[Dict]:
     media_cands: List[Dict] = []
 
@@ -651,14 +698,12 @@ def pick_latest_candidate(
         post = getattr(item, "post", None)
         if not post:
             continue
-
         if item_is_repost(item):
             continue
 
         record = getattr(post, "record", None)
         if not record:
             continue
-
         if getattr(record, "reply", None):
             continue
         if is_quote_post(record):
@@ -687,6 +732,7 @@ def pick_latest_candidate(
                 "cid": cid,
                 "created": created,
                 "author_key": ad or ah or uri,
+                "source_priority": source_priority,
             }
         )
 
@@ -733,8 +779,6 @@ def force_unrepost_unlike_if_needed(
                 except Exception as e:
                     log(f"⚠️ unlike failed: {e}")
         like_records.pop(subject_uri, None)
-
-
 def repost_and_like(
     client: Client,
     me: str,
@@ -785,13 +829,11 @@ def repost_and_like(
 def apply_anti_cluster(cands: List[Dict], lookahead: int = 3) -> List[Dict]:
     if not cands:
         return cands
-
     result = cands[:]
     for i in range(len(result) - 2):
         a1 = result[i]["author_key"]
         a2 = result[i + 1]["author_key"]
         a3 = result[i + 2]["author_key"]
-
         if a1 == a2 == a3:
             swap_idx = None
             for j in range(i + 3, min(len(result), i + 3 + lookahead)):
@@ -810,19 +852,24 @@ def update_promo24h_membership(
 ):
     now = utcnow()
 
+    # huidige members
     for actor in current_members:
         entry = promo24h_state.get(actor)
-        if not entry or entry.get("mode") != mode:
+        if not entry or entry.get("mode") != mode or entry.get("listed") is False:
             promo24h_state[actor] = {
                 "mode": mode,
                 "started_at": dt_to_iso(now),
                 "active": True,
-                "last_seen_listed_at": dt_to_iso(now),
+                "listed": True,
             }
         else:
-            entry["last_seen_listed_at"] = dt_to_iso(now)
+            entry["listed"] = True
 
-    # laat oude andere mode entries bestaan; die kunnen later apart opnieuw geactiveerd worden
+    # entries van deze mode die nu niet listed zijn
+    for actor, entry in list(promo24h_state.items()):
+        if entry.get("mode") == mode and actor not in current_members:
+            entry["listed"] = False
+            entry["active"] = False
 
 
 def actor_has_active_24h_promo(
@@ -835,6 +882,8 @@ def actor_has_active_24h_promo(
     if not entry:
         return False
     if entry.get("mode") != mode:
+        return False
+    if entry.get("listed") is not True:
         return False
     if entry.get("active") is not True:
         return False
@@ -872,7 +921,6 @@ def main():
     me = client.me.did
     log(f"✅ Logged in as {me}")
 
-    # normalize feeds
     feed_uris: List[Tuple[str, Dict, str]] = []
     for key, obj in FEEDS.items():
         if int(obj.get("enabled", 0)) != 1:
@@ -886,7 +934,6 @@ def main():
         else:
             log(f"⚠️ Feed ongeldig (skip): {key} -> {link}")
 
-    # normalize lists
     list_uris: List[Tuple[str, Dict, str]] = []
     for key, obj in LIJSTEN.items():
         if int(obj.get("enabled", 0)) != 1:
@@ -900,7 +947,6 @@ def main():
         else:
             log(f"⚠️ Lijst ongeldig (skip): {key} -> {link}")
 
-    # normalize excludes
     excl_uris: List[Tuple[str, Dict, str]] = []
     for key, obj in EXCLUDE_LISTS.items():
         link = (obj.get("link") or "").strip()
@@ -912,7 +958,7 @@ def main():
         else:
             log(f"⚠️ Exclude lijst ongeldig (skip): {key} -> {link}")
 
-exclude_handles: Set[str] = set()
+    exclude_handles: Set[str] = set()
     exclude_dids: Set[str] = set()
     for key, obj, luri in excl_uris:
         note = obj.get("note", "")
@@ -927,7 +973,6 @@ exclude_handles: Set[str] = set()
 
     all_candidates: List[Dict] = []
 
-    # FEEDS
     log(f"Feeds to process: {len(feed_uris)}")
     for key, obj, furi in feed_uris:
         note = obj.get("note", "")
@@ -945,12 +990,11 @@ exclude_handles: Set[str] = set()
             allow_reposts=int(obj.get("allow_reposts", 0)),
             force_refresh=is_promo_feed,
             promo_bucket="promo_feed" if is_promo_feed else None,
+            source_priority=int(obj.get("priority", 0)),
         )
         all_candidates.extend(cands)
 
-    # LISTS
     log(f"Lists to process: {len(list_uris)}")
-
     for key, obj, luri in list_uris:
         note = obj.get("note", "")
         members = fetch_list_members(client, luri, limit=max(1000, LIST_MEMBER_LIMIT))
@@ -979,7 +1023,13 @@ exclude_handles: Set[str] = set()
 
             if key == PROMO_RANDOM_LIST_KEY:
                 author_items = fetch_author_feed(client, actor, PROMO_FETCH_PER_MEMBER)
-                cand = pick_random_weighted_candidate(author_items, exclude_handles, exclude_dids, PROMO_RANDOM_POOL)
+                cand = pick_random_weighted_candidate(
+                    author_items,
+                    exclude_handles,
+                    exclude_dids,
+                    PROMO_RANDOM_POOL,
+                    int(obj.get("priority", 0)),
+                )
                 if cand and not uri_in_cooldown(cand["uri"], post_last_reposted_at, POST_COOLDOWN_HOURS):
                     cand["promo_bucket"] = "promo_random"
                     all_candidates.append(cand)
@@ -987,26 +1037,44 @@ exclude_handles: Set[str] = set()
 
             elif key == PROMO_LATEST_LIST_KEY:
                 author_items = fetch_author_feed(client, actor, PROMO_FETCH_PER_MEMBER)
-                cand = pick_latest_candidate(author_items, exclude_handles, exclude_dids, "promo_latest")
+                cand = pick_latest_candidate(
+                    author_items,
+                    exclude_handles,
+                    exclude_dids,
+                    "promo_latest",
+                    int(obj.get("priority", 0)),
+                )
                 if cand and not uri_in_cooldown(cand["uri"], post_last_reposted_at, POST_COOLDOWN_HOURS):
                     all_candidates.append(cand)
                     active_accounts += 1
 
             elif key == PROMO_24H_RANDOM_KEY:
-                author_items = fetch_author_feed(client, actor, PROMO_FETCH_PER_MEMBER)
                 update_promo24h_membership(promo24h_state, {actor}, "random")
                 if actor_has_active_24h_promo(promo24h_state, actor, "random", PROMO_24H_DURATION_HOURS):
-                    cand = pick_random_weighted_candidate(author_items, exclude_handles, exclude_dids, PROMO_RANDOM_POOL)
+                    author_items = fetch_author_feed(client, actor, PROMO_FETCH_PER_MEMBER)
+                    cand = pick_random_weighted_candidate(
+                        author_items,
+                        exclude_handles,
+                        exclude_dids,
+                        PROMO_RANDOM_POOL,
+                        int(obj.get("priority", 0)),
+                    )
                     if cand and not uri_in_cooldown(cand["uri"], post_last_reposted_at, POST_COOLDOWN_HOURS):
                         cand["promo_bucket"] = "promo_24h_random"
                         all_candidates.append(cand)
                         active_accounts += 1
 
             elif key == PROMO_24H_LATEST_KEY:
-                author_items = fetch_author_feed(client, actor, PROMO_FETCH_PER_MEMBER)
                 update_promo24h_membership(promo24h_state, {actor}, "latest")
                 if actor_has_active_24h_promo(promo24h_state, actor, "latest", PROMO_24H_DURATION_HOURS):
-                    cand = pick_latest_candidate(author_items, exclude_handles, exclude_dids, "promo_24h_latest")
+                    author_items = fetch_author_feed(client, actor, PROMO_FETCH_PER_MEMBER)
+                    cand = pick_latest_candidate(
+                        author_items,
+                        exclude_handles,
+                        exclude_dids,
+                        "promo_24h_latest",
+                        int(obj.get("priority", 0)),
+                    )
                     if cand and not uri_in_cooldown(cand["uri"], post_last_reposted_at, POST_COOLDOWN_HOURS):
                         all_candidates.append(cand)
                         active_accounts += 1
@@ -1018,11 +1086,12 @@ exclude_handles: Set[str] = set()
                     cutoff=cutoff,
                     exclude_handles=exclude_handles,
                     exclude_dids=exclude_dids,
-                    allow_posts=1,
-                    allow_replies=0,
-                    allow_reposts=0,
+                    allow_posts=int(obj.get("allow_posts", 1)),
+                    allow_replies=int(obj.get("allow_replies", 0)),
+                    allow_reposts=int(obj.get("allow_reposts", 0)),
                     force_refresh=False,
                     promo_bucket=None,
+                    source_priority=int(obj.get("priority", 0)),
                 )
                 if cands:
                     active_accounts += 1
@@ -1035,7 +1104,6 @@ exclude_handles: Set[str] = set()
 
         log(f"📊 {key}: total_accounts={total_accounts} | active_accounts={active_accounts}")
 
-    # HASHTAGS
     active_hashtags = [h.strip() for h in HASHTAGS if h.strip()]
     log(f"Hashtags to process: {len(active_hashtags)}")
     for query in active_hashtags:
@@ -1046,7 +1114,6 @@ exclude_handles: Set[str] = set()
             build_candidates_from_postviews(posts, cutoff, exclude_handles, exclude_dids)
         )
 
-    # cooldown filter voor normale content
     filtered_candidates: List[Dict] = []
     cooldown_skipped = 0
     for cand in all_candidates:
@@ -1061,10 +1128,9 @@ exclude_handles: Set[str] = set()
     if cooldown_skipped:
         log(f"⏳ Cooldown skipped: {cooldown_skipped}")
 
-    # gezamenlijke tijdlijn + dedupe
     seen: Set[str] = set()
     deduped: List[Dict] = []
-    for c in sorted(filtered_candidates, key=lambda x: x["created"]):
+    for c in sorted(filtered_candidates, key=lambda x: (x["created"], -x.get("source_priority", 0))):
         uri = c.get("uri")
         if not uri or uri in seen:
             continue
