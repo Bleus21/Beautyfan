@@ -1,0 +1,25 @@
+name: Beautyfan Bot 04
+
+on:
+  schedule:
+    - cron: "4 * * * *"
+  workflow_dispatch:
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - run: pip install atproto
+
+      - run: python beautyfan_reposter.py
+        env:
+          BSKY_USERNAME: ${{ secrets.BSKY_USERNAME_BEAUTYFAN }}
+          BSKY_PASSWORD: ${{ secrets.BSKY_PASSWORD_BEAUTYFAN }}
+          STATE_FILE: state_beautyfan.json
