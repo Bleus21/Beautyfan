@@ -249,7 +249,7 @@ PROCESS_ORDER = {
 LIST_MEMBER_LIMIT = int(os.getenv("LIST_MEMBER_LIMIT", "1500"))
 MAX_PER_RUN = int(os.getenv("MAX_PER_RUN", "100"))
 MAX_PER_USER = int(os.getenv("MAX_PER_USER", "3"))
-HOURS_BACK = int(os.getenv("HOURS_BACK", "1,5"))
+HOURS_BACK = int(os.getenv("HOURS_BACK", "2"))
 SLEEP_SECONDS = float(os.getenv("SLEEP_SECONDS", "2"))
 
 STATE_FILE = os.getenv("STATE_FILE", "state_beautyfan.json")
