@@ -1145,12 +1145,60 @@ def main():
         seen.add(uri)
         deduped.append(c)
 
-    normal_cands = [c for c in deduped if not c.get("promo_bucket")]
+normal_cands = [c for c in deduped if not c.get("promo_bucket")]
     promo_feed_cands = [c for c in deduped if c.get("promo_bucket") == "promo_feed"]
     promo_latest_cands = [c for c in deduped if c.get("promo_bucket") == "promo_latest"]
     promo_random_cands = [c for c in deduped if c.get("promo_bucket") == "promo_random"]
     promo_24h_latest_cands = [c for c in deduped if c.get("promo_bucket") == "promo_24h_latest"]
     promo_24h_random_cands = [c for c in deduped if c.get("promo_bucket") == "promo_24h_random"]
+
+    # ============================================================
+    # FALLBACK 24H PROMO
+    # ============================================================
+    if FALLBACK_PROMO.get("enabled", 0) == 1:
+        has_active_24h = (
+            len(promo_24h_latest_cands) > 0
+            or len(promo_24h_random_cands) > 0
+        )
+
+        if not has_active_24h:
+            fallback_url = FALLBACK_PROMO.get("post_url", "").strip()
+
+            if fallback_url:
+                try:
+                    parts = fallback_url.split("/post/")
+                    if len(parts) == 2:
+                        handle_part = parts[0].split("/profile/")[-1]
+                        post_rkey = parts[1]
+
+                        did = resolve_handle_to_did(client, handle_part)
+
+                        if did:
+                            uri = f"at://{did}/app.bsky.feed.post/{post_rkey}"
+
+                            post_data = client.app.bsky.feed.get_posts({"uris": [uri]})
+                            posts = getattr(post_data, "posts", []) or []
+
+                            if posts:
+                                post_obj = posts[0]
+                                cid = getattr(post_obj, "cid", None)
+
+                                if cid:
+                                    fallback_candidate = {
+                                        "uri": uri,
+                                        "cid": cid,
+                                        "created": utcnow(),
+                                        "author_key": "fallback",
+                                        "force_refresh": True,
+                                        "promo_bucket": "promo_24h_latest",
+                                        "source_priority": 999,
+                                    }
+
+                                    promo_24h_latest_cands.append(fallback_candidate)
+                                    log("🔥 Fallback promo toegevoegd")
+
+                except Exception as e:
+                    log(f"⚠️ Fallback error: {e}")
 
     normal_cands = apply_anti_cluster(normal_cands)
 
