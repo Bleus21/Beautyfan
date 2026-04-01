@@ -1145,7 +1145,7 @@ def main():
         seen.add(uri)
         deduped.append(c)
 
-normal_cands = [c for c in deduped if not c.get("promo_bucket")]
+    normal_cands = [c for c in deduped if not c.get("promo_bucket")]
     promo_feed_cands = [c for c in deduped if c.get("promo_bucket") == "promo_feed"]
     promo_latest_cands = [c for c in deduped if c.get("promo_bucket") == "promo_latest"]
     promo_random_cands = [c for c in deduped if c.get("promo_bucket") == "promo_random"]
