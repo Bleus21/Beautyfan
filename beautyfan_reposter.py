@@ -1156,9 +1156,9 @@ def main():
     # FALLBACK 24H PROMO
     # ============================================================
     if FALLBACK_PROMO.get("enabled", 0) == 1:
-        has_active_24h = (
-            len(promo_24h_latest_cands) > 0
-            or len(promo_24h_random_cands) > 0
+        has_active_24h = any(
+            entry.get("active") is True and entry.get("listed") is True
+            for entry in promo24h_state.values()
         )
 
         if not has_active_24h:
