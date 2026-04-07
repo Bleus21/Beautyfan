@@ -107,8 +107,8 @@ LIJSTEN: Dict[str, Dict] = {
 }
 
 LIJSTEN["lijst 1"].update({
-    "link": "https://bsky.app/profile/did:plc:jaka644beit3x4vmmg6yysw7/lists/3m3iga6wnmz2p",
-    "note": "Beautygrouplijst",
+    "link": "",
+    "note": "",
     "enabled": 1,
     "allow_posts": 1,
     "allow_replies": 0,
