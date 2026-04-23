@@ -77,8 +77,8 @@ FEEDS["feed 2"].update({
 })
 
 FEEDS["feed 3"].update({
-    "link": "https://bsky.app/profile/did:plc:jaka644beit3x4vmmg6yysw7/feed/aaabjeu5724em",
-    "note": "Mentioned",
+    "link": "",
+    "note": "",
     "enabled": 1,
     "allow_posts": 1,
     "allow_replies": 0,
@@ -117,8 +117,8 @@ LIJSTEN["lijst 1"].update({
 })
 
 LIJSTEN["lijst 2"].update({
-    "link": "https://bsky.app/profile/did:plc:jaka644beit3x4vmmg6yysw7/lists/3mgldgnponw2m",
-    "note": "Beautygroup creators",
+    "link": "",
+    "note": "",
     "enabled": 1,
     "allow_posts": 1,
     "allow_replies": 0,
@@ -127,8 +127,8 @@ LIJSTEN["lijst 2"].update({
 })
 
 LIJSTEN["lijst 3"].update({
-    "link": "https://bsky.app/profile/did:plc:zmyydkc2zzznc4smjufuerlx/lists/3mhs2vtwixg2q",
-    "note": "Photo lijst 1",
+    "link": "",
+    "note": "",
     "enabled": 1,
     "allow_posts": 1,
     "allow_replies": 0,
@@ -137,8 +137,8 @@ LIJSTEN["lijst 3"].update({
 })
 
 LIJSTEN["lijst 4"].update({
-    "link": "https://bsky.app/profile/did:plc:zmyydkc2zzznc4smjufuerlx/lists/3mhs2xmxmos2l",
-    "note": "Photo lijst 2",
+    "link": "",
+    "note": "",
     "enabled": 1,
     "allow_posts": 1,
     "allow_replies": 0,
