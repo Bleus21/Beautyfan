@@ -1,0 +1,57 @@
+name: Beautyfan 46
+
+on:
+  schedule:
+    - cron: "46 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: beautyfan-46
+  cancel-in-progress: true
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install atproto
+
+      - name: Ensure state file exists
+        run: |
+          test -f state_beautyfan.json || echo '{}' > state_beautyfan.json
+
+      - name: Run Beautyfan bot
+        env:
+          BSKY_USERNAME: ${{ secrets.BSKY_USERNAME_BEAUTYFAN }}
+          BSKY_PASSWORD: ${{ secrets.BSKY_PASSWORD_BEAUTYFAN }}
+          STATE_FILE: state_beautyfan.json
+          MAX_PER_RUN: "100"
+          MAX_PER_USER: "3"
+          HOURS_BACK: "2"
+          SLEEP_SECONDS: "2"
+          LIST_MEMBER_LIMIT: "1500"
+          AUTHOR_POSTS_PER_MEMBER: "30"
+          FEED_MAX_ITEMS: "500"
+          HASHTAG_MAX_ITEMS: "100"
+          PROMO_RANDOM_POOL: "25"
+          PROMO_FETCH_PER_MEMBER: "100"
+          POST_COOLDOWN_HOURS: "3"
+          PROMO_24H_DURATION_HOURS: "24"
+        run: python beautyfan_reposter.py
+
+      - name: Commit updated state
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add state_beautyfan.json
+          git diff --cached --quiet || git commit -m "Update Beautyfan state (:46)"
+          git push
