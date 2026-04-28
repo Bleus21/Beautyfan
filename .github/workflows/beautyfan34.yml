@@ -2,7 +2,7 @@ name: Beautyfan 04
 
 on:
   schedule:
-    - cron: "4 * * * *"
+    - cron: "34 * * * *"
   workflow_dispatch:
 
 concurrency:
