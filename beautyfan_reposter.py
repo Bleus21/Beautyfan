@@ -67,8 +67,8 @@ FEEDS["feed 1"].update({
 })
 
 FEEDS["feed 2"].update({
-    "link": "",
-    "note": "",
+    "link": "https://bsky.app/profile/did:plc:cxrt7ggxkamgzxa47cggtees/feed/aaaoirmgh53zw",
+    "note": "redfox",
     "enabled": 1,
     "allow_posts": 1,
     "allow_replies": 1,
