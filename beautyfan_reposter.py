@@ -923,12 +923,13 @@ def main():
     like_records: Dict[str, str] = state.get("like_records", {})
     post_last_reposted_at: Dict[str, str] = state.get("post_last_reposted_at", {})
     promo24h_state: Dict[str, Dict] = state.get("promo24h_state", {})
-import hashlib
 
-print("DEBUG USERNAME:", username)
-print("DEBUG USERNAME LEN:", len(username or ""))
-print("DEBUG PASSWORD LEN:", len(password or ""))
-print("DEBUG PASSWORD HASH:", hashlib.sha256((password or "").encode()).hexdigest()[:12])
+    import hashlib
+
+    print("DEBUG USERNAME:", username)
+    print("DEBUG USERNAME LEN:", len(username or ""))
+    print("DEBUG PASSWORD LEN:", len(password or ""))
+    print("DEBUG PASSWORD HASH:", hashlib.sha256((password or "").encode()).hexdigest()[:12])
 
     client = Client()
     client.login(username, password)
