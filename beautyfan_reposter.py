@@ -21,10 +21,6 @@ print("=== BEAUTYFAN BOT STARTED ===", flush=True)
 # BOT NAAM        : Beautyfan
 # PYTHON FILE     : beautyfan_reposter.py
 # STATE FILE      : state_beautyfan.json
-# WORKFLOW FILES  :
-#   .github/workflows/beautyfan_04.yml
-#   .github/workflows/beautyfan_24.yml
-#   .github/workflows/beautyfan_46.yml
 #
 # GITHUB SECRETS:
 #   BSKY_USERNAME_BEAUTYFAN
@@ -33,14 +29,6 @@ print("=== BEAUTYFAN BOT STARTED ===", flush=True)
 # In workflows mappen naar:
 #   BSKY_USERNAME
 #   BSKY_PASSWORD
-# ============================================================
-
-# ============================================================
-# FEEDS (20 stuks)
-# leeg = skip
-# enabled: 1 = aan, 0 = uit
-# allow_posts / allow_replies / allow_reposts: 1 of 0
-# priority: alleen tie-break / selectiehulp, timeline blijft leidend
 # ============================================================
 
 FEEDS: Dict[str, Dict] = {
@@ -85,13 +73,6 @@ FEEDS["feed 3"].update({
     "allow_reposts": 1,
     "priority": 5,
 })
-
-# ============================================================
-# LIJSTEN (20 stuks)
-# leeg = skip
-# enabled: 1 = aan, 0 = uit
-# allow_posts / allow_replies / allow_reposts: 1 of 0
-# ============================================================
 
 LIJSTEN: Dict[str, Dict] = {
     f"lijst {i}": {
@@ -186,29 +167,11 @@ LIJSTEN["lijst 8"].update({
     "priority": 20,
 })
 
-# ============================================================
-# HASHTAGS
-# leeg = skip
-# ============================================================
-
 HASHTAGS = [
     "",
     "",
     "",
 ]
-
-# ============================================================
-# FALLBACK PROMO
-# ============================================================
-
-FALLBACK_PROMO = {
-    "enabled": 1,
-    "post_url": "https://bsky.app/profile/beautyfan.bsky.social/post/3mihjqpm6vc27",
-}
-
-# ============================================================
-# EXCLUDE LISTS
-# ============================================================
 
 EXCLUDE_LISTS = {
     "exclude 1": {
@@ -225,34 +188,16 @@ EXCLUDE_LISTS = {
     },
 }
 
-# ============================================================
-# PROMO KEYS
-# ============================================================
-
 PROMO_FEED_KEY = "feed 1"
 PROMO_RANDOM_LIST_KEY = "lijst 5"
 PROMO_LATEST_LIST_KEY = "lijst 6"
-PROMO_24H_LATEST_KEY = "lijst 7"
-PROMO_24H_RANDOM_KEY = "lijst 8"
-
-# ============================================================
-# PROCESS ORDER
-# 0 = uit
-# hoogste nummer = als laatste = bovenaan profiel
-# ============================================================
 
 PROCESS_ORDER = {
     "normal": 1,
     "promo_feed": 0,
     "promo_latest": 2,
     "promo_random": 3,
-    "promo_24h_latest": 4,
-    "promo_24h_random": 5,
 }
-
-# ============================================================
-# LIMITS / SETTINGS
-# ============================================================
 
 LIST_MEMBER_LIMIT = int(os.getenv("LIST_MEMBER_LIMIT", "1500"))
 MAX_PER_RUN = int(os.getenv("MAX_PER_RUN", "100"))
@@ -267,9 +212,7 @@ HASHTAG_MAX_ITEMS = int(os.getenv("HASHTAG_MAX_ITEMS", "100"))
 
 PROMO_RANDOM_POOL = int(os.getenv("PROMO_RANDOM_POOL", "25"))
 PROMO_FETCH_PER_MEMBER = int(os.getenv("PROMO_FETCH_PER_MEMBER", "100"))
-
 POST_COOLDOWN_HOURS = int(os.getenv("POST_COOLDOWN_HOURS", "3"))
-PROMO_24H_DURATION_HOURS = int(os.getenv("PROMO_24H_DURATION_HOURS", "24"))
 
 ENV_USERNAME = "BSKY_USERNAME"
 ENV_PASSWORD = "BSKY_PASSWORD"
@@ -299,6 +242,8 @@ def parse_iso_dt(value: Optional[str]) -> Optional[datetime]:
         return datetime.fromisoformat(value.replace("Z", "+00:00"))
     except Exception:
         return None
+
+
 def parse_time(post) -> Optional[datetime]:
     indexed = getattr(post, "indexedAt", None) or getattr(post, "indexed_at", None)
     if indexed:
@@ -405,7 +350,6 @@ def load_state(path: str) -> Dict:
         "repost_records": {},
         "like_records": {},
         "post_last_reposted_at": {},
-        "promo24h_state": {},
     }
     if not os.path.exists(path):
         return base
@@ -419,6 +363,13 @@ def load_state(path: str) -> Dict:
         return data
     except Exception:
         return base
+
+
+def save_state(path: str, state: Dict) -> None:
+    tmp = path + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(state, f, ensure_ascii=False, indent=2)
+    os.replace(tmp, path)
 
 
 def save_state(path: str, state: Dict) -> None:
@@ -442,6 +393,8 @@ def fetch_feed_items(client: Client, feed_uri: str, max_items: int) -> List:
         if not cursor or len(items) >= max_items:
             break
     return items[:max_items]
+
+
 def fetch_list_members(client: Client, list_uri: str, limit: int) -> List[Tuple[str, str]]:
     members: List[Tuple[str, str]] = []
     cursor = None
@@ -562,20 +515,20 @@ def build_candidates_from_feed_items(
         if created < cutoff and not force_refresh:
             continue
 
-        cands.append(
-            {
-                "uri": uri,
-                "cid": cid,
-                "created": created,
-                "author_key": ad or ah or uri,
-                "force_refresh": force_refresh,
-                "promo_bucket": promo_bucket,
-                "source_priority": source_priority,
-            }
-        )
+        cands.append({
+            "uri": uri,
+            "cid": cid,
+            "created": created,
+            "author_key": ad or ah or uri,
+            "force_refresh": force_refresh,
+            "promo_bucket": promo_bucket,
+            "source_priority": source_priority,
+        })
 
     cands.sort(key=lambda x: (x["created"], -x["source_priority"]))
     return cands
+
+
 def build_candidates_from_postviews(
     posts: List,
     cutoff: datetime,
@@ -611,17 +564,15 @@ def build_candidates_from_postviews(
         if not created or created < cutoff:
             continue
 
-        cands.append(
-            {
-                "uri": uri,
-                "cid": cid,
-                "created": created,
-                "author_key": ad or ah or uri,
-                "force_refresh": False,
-                "promo_bucket": None,
-                "source_priority": 0,
-            }
-        )
+        cands.append({
+            "uri": uri,
+            "cid": cid,
+            "created": created,
+            "author_key": ad or ah or uri,
+            "force_refresh": False,
+            "promo_bucket": None,
+            "source_priority": 0,
+        })
 
     cands.sort(key=lambda x: (x["created"], -x["source_priority"]))
     return cands
@@ -668,15 +619,13 @@ def pick_random_weighted_candidate(
         if not created:
             continue
 
-        media_cands.append(
-            {
-                "uri": uri,
-                "cid": cid,
-                "created": created,
-                "author_key": ad or ah or uri,
-                "source_priority": source_priority,
-            }
-        )
+        media_cands.append({
+            "uri": uri,
+            "cid": cid,
+            "created": created,
+            "author_key": ad or ah or uri,
+            "source_priority": source_priority,
+        })
 
     if not media_cands:
         return None
@@ -734,15 +683,13 @@ def pick_latest_candidate(
         if not created:
             continue
 
-        media_cands.append(
-            {
-                "uri": uri,
-                "cid": cid,
-                "created": created,
-                "author_key": ad or ah or uri,
-                "source_priority": source_priority,
-            }
-        )
+        media_cands.append({
+            "uri": uri,
+            "cid": cid,
+            "created": created,
+            "author_key": ad or ah or uri,
+            "source_priority": source_priority,
+        })
 
     if not media_cands:
         return None
@@ -787,6 +734,8 @@ def force_unrepost_unlike_if_needed(
                 except Exception as e:
                     log(f"⚠️ unlike failed: {e}")
         like_records.pop(subject_uri, None)
+
+
 def repost_and_like(
     client: Client,
     me: str,
@@ -853,60 +802,6 @@ def apply_anti_cluster(cands: List[Dict], lookahead: int = 3) -> List[Dict]:
     return result
 
 
-def update_promo24h_membership(
-    promo24h_state: Dict[str, Dict],
-    current_members: Set[str],
-    mode: str,
-):
-    now = utcnow()
-
-    # huidige members
-    for actor in current_members:
-        entry = promo24h_state.get(actor)
-        if not entry or entry.get("mode") != mode or entry.get("listed") is False:
-            promo24h_state[actor] = {
-                "mode": mode,
-                "started_at": dt_to_iso(now),
-                "active": True,
-                "listed": True,
-            }
-        else:
-            entry["listed"] = True
-
-    # entries van deze mode die nu niet listed zijn
-    for actor, entry in list(promo24h_state.items()):
-        if entry.get("mode") == mode and actor not in current_members:
-            entry["listed"] = False
-            entry["active"] = False
-
-
-def actor_has_active_24h_promo(
-    promo24h_state: Dict[str, Dict],
-    actor: str,
-    mode: str,
-    duration_hours: int,
-) -> bool:
-    entry = promo24h_state.get(actor)
-    if not entry:
-        return False
-    if entry.get("mode") != mode:
-        return False
-    if entry.get("listed") is not True:
-        return False
-    if entry.get("active") is not True:
-        return False
-
-    started_at = parse_iso_dt(entry.get("started_at"))
-    if not started_at:
-        return False
-
-    if utcnow() - started_at <= timedelta(hours=duration_hours):
-        return True
-
-    entry["active"] = False
-    return False
-
-
 def main():
     log("=== BEAUTYFAN BOT START ===")
 
@@ -922,7 +817,6 @@ def main():
     repost_records: Dict[str, str] = state.get("repost_records", {})
     like_records: Dict[str, str] = state.get("like_records", {})
     post_last_reposted_at: Dict[str, str] = state.get("post_last_reposted_at", {})
-    promo24h_state: Dict[str, Dict] = state.get("promo24h_state", {})
 
     import hashlib
 
@@ -1021,20 +915,13 @@ def main():
             tag = " [PROMO RANDOM]"
         elif key == PROMO_LATEST_LIST_KEY:
             tag = " [PROMO LATEST]"
-        elif key == PROMO_24H_RANDOM_KEY:
-            tag = " [24H RANDOM]"
-        elif key == PROMO_24H_LATEST_KEY:
-            tag = " [24H LATEST]"
 
         log(f"📋 List: {key} ({note}){tag} -> {total_accounts} accounts")
-
-        current_member_keys: Set[str] = set()
 
         for h, d in members:
             actor = d or h
             if not actor:
                 continue
-            current_member_keys.add(actor)
 
             if key == PROMO_RANDOM_LIST_KEY:
                 author_items = fetch_author_feed(client, actor, PROMO_FETCH_PER_MEMBER)
@@ -1062,37 +949,6 @@ def main():
                 if cand and not uri_in_cooldown(cand["uri"], post_last_reposted_at, POST_COOLDOWN_HOURS):
                     all_candidates.append(cand)
                     active_accounts += 1
-
-            elif key == PROMO_24H_RANDOM_KEY:
-                update_promo24h_membership(promo24h_state, {actor}, "random")
-                if actor_has_active_24h_promo(promo24h_state, actor, "random", PROMO_24H_DURATION_HOURS):
-                    author_items = fetch_author_feed(client, actor, PROMO_FETCH_PER_MEMBER)
-                    cand = pick_random_weighted_candidate(
-                        author_items,
-                        exclude_handles,
-                        exclude_dids,
-                        PROMO_RANDOM_POOL,
-                        int(obj.get("priority", 0)),
-                    )
-                    if cand and not uri_in_cooldown(cand["uri"], post_last_reposted_at, POST_COOLDOWN_HOURS):
-                        cand["promo_bucket"] = "promo_24h_random"
-                        all_candidates.append(cand)
-                        active_accounts += 1
-
-            elif key == PROMO_24H_LATEST_KEY:
-                update_promo24h_membership(promo24h_state, {actor}, "latest")
-                if actor_has_active_24h_promo(promo24h_state, actor, "latest", PROMO_24H_DURATION_HOURS):
-                    author_items = fetch_author_feed(client, actor, PROMO_FETCH_PER_MEMBER)
-                    cand = pick_latest_candidate(
-                        author_items,
-                        exclude_handles,
-                        exclude_dids,
-                        "promo_24h_latest",
-                        int(obj.get("priority", 0)),
-                    )
-                    if cand and not uri_in_cooldown(cand["uri"], post_last_reposted_at, POST_COOLDOWN_HOURS):
-                        all_candidates.append(cand)
-                        active_accounts += 1
 
             else:
                 author_items = fetch_author_feed(client, actor, AUTHOR_POSTS_PER_MEMBER)
@@ -1132,7 +988,7 @@ def main():
     filtered_candidates: List[Dict] = []
     cooldown_skipped = 0
     for cand in all_candidates:
-        if cand.get("promo_bucket") in {"promo_random", "promo_latest", "promo_24h_random", "promo_24h_latest"}:
+        if cand.get("promo_bucket") in {"promo_random", "promo_latest"}:
             filtered_candidates.append(cand)
             continue
         if uri_in_cooldown(cand["uri"], post_last_reposted_at, POST_COOLDOWN_HOURS):
@@ -1156,64 +1012,13 @@ def main():
     promo_feed_cands = [c for c in deduped if c.get("promo_bucket") == "promo_feed"]
     promo_latest_cands = [c for c in deduped if c.get("promo_bucket") == "promo_latest"]
     promo_random_cands = [c for c in deduped if c.get("promo_bucket") == "promo_random"]
-    promo_24h_latest_cands = [c for c in deduped if c.get("promo_bucket") == "promo_24h_latest"]
-    promo_24h_random_cands = [c for c in deduped if c.get("promo_bucket") == "promo_24h_random"]
-
-    # ============================================================
-    # FALLBACK 24H PROMO
-    # ============================================================
-    if FALLBACK_PROMO.get("enabled", 0) == 1:
-        has_active_24h = any(
-            entry.get("active") is True and entry.get("listed") is True
-            for entry in promo24h_state.values()
-        )
-
-        if not has_active_24h:
-            fallback_url = FALLBACK_PROMO.get("post_url", "").strip()
-
-            if fallback_url:
-                try:
-                    parts = fallback_url.split("/post/")
-                    if len(parts) == 2:
-                        handle_part = parts[0].split("/profile/")[-1]
-                        post_rkey = parts[1]
-
-                        did = resolve_handle_to_did(client, handle_part)
-
-                        if did:
-                            uri = f"at://{did}/app.bsky.feed.post/{post_rkey}"
-
-                            post_data = client.app.bsky.feed.get_posts({"uris": [uri]})
-                            posts = getattr(post_data, "posts", []) or []
-
-                            if posts:
-                                post_obj = posts[0]
-                                cid = getattr(post_obj, "cid", None)
-
-                                if cid:
-                                    fallback_candidate = {
-                                        "uri": uri,
-                                        "cid": cid,
-                                        "created": utcnow(),
-                                        "author_key": "fallback",
-                                        "force_refresh": True,
-                                        "promo_bucket": "promo_24h_latest",
-                                        "source_priority": 999,
-                                    }
-
-                                    promo_24h_latest_cands.append(fallback_candidate)
-                                    log("🔥 Fallback promo toegevoegd")
-
-                except Exception as e:
-                    log(f"⚠️ Fallback error: {e}")
 
     normal_cands = apply_anti_cluster(normal_cands)
 
     log(
         "🧩 Candidates total (deduped): "
         f"{len(deduped)} | normal={len(normal_cands)} | promo_feed={len(promo_feed_cands)} "
-        f"| promo_latest={len(promo_latest_cands)} | promo_random={len(promo_random_cands)} "
-        f"| promo_24h_latest={len(promo_24h_latest_cands)} | promo_24h_random={len(promo_24h_random_cands)}"
+        f"| promo_latest={len(promo_latest_cands)} | promo_random={len(promo_random_cands)}"
     )
 
     total_done = 0
@@ -1224,8 +1029,6 @@ def main():
         "promo_feed": promo_feed_cands,
         "promo_latest": promo_latest_cands,
         "promo_random": promo_random_cands,
-        "promo_24h_latest": promo_24h_latest_cands,
-        "promo_24h_random": promo_24h_random_cands,
     }
 
     ordered_groups = sorted(
@@ -1279,7 +1082,6 @@ def main():
     state["repost_records"] = repost_records
     state["like_records"] = like_records
     state["post_last_reposted_at"] = post_last_reposted_at
-    state["promo24h_state"] = promo24h_state
     save_state(STATE_FILE, state)
     log(f"🔥 Done — total reposts this run: {total_done}")
 
