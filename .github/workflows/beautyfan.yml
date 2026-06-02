@@ -4,8 +4,6 @@ on:
   workflow_dispatch:
   schedule:
     - cron: "4 * * * *"
-    - cron: "24 * * * *"
-    - cron: "46 * * * *"
 
 jobs:
   run-bot:
