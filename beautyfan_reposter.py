@@ -148,7 +148,7 @@ LIJSTEN["lijst 6"].update({
 })
 
 LIJSTEN["lijst 7"].update({
-    "link": "https://bsky.app/profile/did:plc:cvfulblhg2fttolrunih4ldv/lists/3mieg6y74fw2h",
+    "link": "",
     "note": "24H PROMO LATEST",
     "enabled": 1,
     "allow_posts": 1,
@@ -158,7 +158,7 @@ LIJSTEN["lijst 7"].update({
 })
 
 LIJSTEN["lijst 8"].update({
-    "link": "https://bsky.app/profile/did:plc:cvfulblhg2fttolrunih4ldv/lists/3mieg6jlokx2m",
+    "link": "",
     "note": "24H PROMO RANDOM",
     "enabled": 1,
     "allow_posts": 1,
@@ -168,7 +168,7 @@ LIJSTEN["lijst 8"].update({
 })
 
 HASHTAGS = [
-    "",
+    "#bskypromo",
     "",
     "",
 ]
